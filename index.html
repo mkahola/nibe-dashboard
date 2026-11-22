@@ -179,6 +179,7 @@ footer a{color:var(--bl);text-decoration:none}
 
 <!-- ════════════════ DASHBOARD ════════════════ -->
 <div id="dashboard">
+  <div id="errbar" style="display:none;background:#2d0d0d;border:1px solid #4d1a1a;color:#f85149;padding:10px 14px;border-radius:10px;margin-bottom:16px;font-size:12px;line-height:1.5;word-break:break-word"></div>
   <div class="alarm" id="alarm">⚠ Active alarm — code <span id="alcode">—</span></div>
 
   <div class="tabs">
@@ -403,9 +404,25 @@ async function apiGet(path) {
     const ok = await doRefresh();
     if (!ok) { showSetup(); throw new Error('Session expired'); }
   }
-  const res = await fetch(API_BASE + path, { headers: { Authorization: 'Bearer ' + accessToken } });
-  if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
+  let res;
+  try {
+    res = await fetch(API_BASE + path, { headers: { Authorization: 'Bearer ' + accessToken } });
+  } catch (e) {
+    throw new Error('Network/CORS error calling ' + path + ' (' + e.message + '). If the browser console mentions CORS, api.myuplink.com is not allowing requests from this site and a small proxy is needed.');
+  }
+  if (!res.ok) {
+    let body = '';
+    try { body = (await res.text()).slice(0, 200); } catch {}
+    throw new Error(`API ${path} → HTTP ${res.status} ${body}`);
+  }
   return res.json();
+}
+
+function showError(msg) {
+  const el = document.getElementById('errbar');
+  if (!msg) { el.style.display = 'none'; return; }
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
 }
 
 async function loadSystems() {
@@ -458,7 +475,7 @@ async function startDashboard() {
     setBadge('ok', '⬤ Live');
   } catch(e) {
     setBadge('err', '⬤ Error');
-    document.getElementById('upd').textContent = e.message;
+    showError(e.message);
   }
 }
 
@@ -475,12 +492,14 @@ async function pollData() {
     allParams = Array.isArray(points) ? points : (points.parameterGroups
       ? points.parameterGroups.flatMap(g => g.parameters || [])
       : []);
+    if (!allParams.length) throw new Error('The API returned no data points for this device. Check that it is online at myuplink.com.');
+    showError('');
     render(allParams);
     setBadge('ok', '⬤ Live');
     document.getElementById('upd').textContent = 'Updated ' + new Date().toLocaleTimeString();
   } catch(e) {
     setBadge('err', '⬤ Error');
-    document.getElementById('upd').textContent = e.message;
+    showError(e.message);
   }
 }
 
@@ -492,37 +511,59 @@ function paramVal(id) {
   return p ? p : null;
 }
 function raw(id) { const p = paramVal(id); return p ? p.value : null; }
-function disp(id) { const p = paramVal(id); return p ? (p.displayValue || String(p.value)) : '—'; }
+function disp(id) { return txt(paramVal(id)); }
+
+// myUplink returns the human-readable value in `strVal` (e.g. "-3.5°C", "Heating")
+function txt(p) {
+  if (!p) return '—';
+  if (p.strVal !== undefined && p.strVal !== null && p.strVal !== '') return p.strVal;
+  if (p.displayValue !== undefined) return p.displayValue;
+  return p.value === undefined || p.value === null ? '—' : String(p.value);
+}
+// Find a point by known ID(s) first, then by name pattern (IDs differ between models)
+function findP(ids, re) {
+  for (const id of ids) { const p = paramVal(id); if (p) return p; }
+  return re ? (allParams.find(p => re.test(p.parameterName || '')) || null) : null;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function render(params) {
-  // Status cards
-  const cst = raw(43427);
-  const cls  = COMP_STATE[cst] || 'stopped';
-  const lbl  = COMP_LABEL[cst] || '—';
-  document.getElementById('s-comp').innerHTML = `<span class="pill ${cls}">${lbl}</span>`;
-  const prio = raw(43086);
-  document.getElementById('s-prio').textContent = PRIO_LABEL[prio] || disp(43086);
-  document.getElementById('s-dm').textContent = fmt(raw(43005), 0);
-  document.getElementById('s-el').textContent = fmt(raw(43084), 2);
-  const hwm = raw(47041);
-  document.getElementById('s-hw').textContent = HW_LABEL[hwm] || disp(47041);
+  // Status cards (looked up by ID, falling back to name)
+  const comp = findP([43427, 44061], /compressor/i);
+  const ct = txt(comp).toLowerCase();
+  const cls = /run|start|on|active|heat|hot/.test(ct) && !/stop|off/.test(ct) ? 'running' : 'stopped';
+  document.getElementById('s-comp').innerHTML = comp ? `<span class="pill ${cls}">${esc(txt(comp))}</span>` : '—';
+  document.getElementById('s-prio').textContent = txt(findP([43086, 49994], /priority|operating mode/i));
+  document.getElementById('s-dm').textContent = txt(findP([43005], /degree minutes/i));
+  document.getElementById('s-el').textContent = txt(findP([43084], /add(ition)?.*(power|kw)|el\.? add/i));
+  document.getElementById('s-hw').textContent = txt(findP([47041], /hot water.*(mode|demand)|comfort/i));
 
   // Alarm
-  const alarm = raw(45001);
+  const alarmP = findP([45001], /^alarm/i);
   const alarmEl = document.getElementById('alarm');
-  if (alarm && alarm !== 0) { alarmEl.classList.add('on'); document.getElementById('alcode').textContent = alarm; }
+  if (alarmP && alarmP.value) { alarmEl.classList.add('on'); document.getElementById('alcode').textContent = txt(alarmP); }
   else alarmEl.classList.remove('on');
 
-  // Temperature cards
-  [40004,40008,40012,40013,40014,40018,40023,40033,43009].forEach(id => {
-    const el = document.getElementById('t-'+id);
-    if (el) el.textContent = disp(id) || '—';
-  });
+  // Temperature cards: built from whatever °C sensors this pump actually reports
+  const order = Object.keys(KNOWN).map(Number);
+  const sensors = params.filter(p => p.parameterUnit === '°C' && !p.writable)
+    .sort((a, b) => {
+      const ia = order.indexOf(+a.parameterId), ib = order.indexOf(+b.parameterId);
+      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+    }).slice(0, 15);
+  const tg = document.getElementById('tgrid');
+  tg.innerHTML = sensors.length ? sensors.map(p => {
+    const k = KNOWN[+p.parameterId] || {icon:'🌡', col:'#58a6ff', bg:'#0c2038'};
+    return `<div class="tc"><div class="ti" style="background:${k.bg};color:${k.col}">${k.icon}</div>
+      <div><div class="tn">${esc(p.parameterName || p.parameterId)}</div>
+      <div class="tv" style="color:${k.col}">${esc(txt(p))}</div></div></div>`;
+  }).join('') : '<div style="color:var(--tx2);font-size:13px">No temperature sensors reported. See the All parameters tab.</div>';
 
-  // History
-  hist.o.push(raw(40004)); hist.o.shift();
-  hist.s.push(raw(40008)); hist.s.shift();
-  hist.r.push(raw(40033)); hist.r.shift();
+  // History (outdoor / supply / room, matched by ID or name)
+  const num = p => (p && typeof p.value === 'number') ? p.value : null;
+  hist.o.push(num(findP([40004], /outdoor/i))); hist.o.shift();
+  hist.s.push(num(findP([40008], /supply|flow/i))); hist.s.shift();
+  hist.r.push(num(findP([40033], /room/i))); hist.r.shift();
   drawChart();
 
   // All params table
@@ -535,20 +576,19 @@ function renderParamTable(params) {
     if (!q) return true;
     const name = (p.parameterName || '').toLowerCase();
     const id   = String(p.parameterId || '');
-    const val  = String(p.displayValue || p.value || '').toLowerCase();
+    const val  = txt(p).toLowerCase();
     return name.includes(q) || id.includes(q) || val.includes(q);
   });
   document.getElementById('param-count').textContent = `${filtered.length} of ${params.length} parameters`;
   document.getElementById('param-tbody').innerHTML = filtered.map(p => {
-    const known = KNOWN[+p.parameterId];
-    const name  = known ? known.label : (p.parameterName || '—');
-    const val   = p.displayValue !== undefined ? p.displayValue : (p.value !== undefined ? p.value : '—');
+    const name  = p.parameterName || (KNOWN[+p.parameterId] || {}).label || '—';
+    const val   = txt(p);
     const unit  = p.parameterUnit || '';
     return `<tr>
-      <td class="pt-id">${p.parameterId || '—'}</td>
-      <td>${name}</td>
-      <td class="vc">${val}</td>
-      <td class="uc">${unit}</td>
+      <td class="pt-id">${esc(p.parameterId || '—')}</td>
+      <td>${esc(name)}</td>
+      <td class="vc">${esc(val)}</td>
+      <td class="uc">${esc(unit)}</td>
     </tr>`;
   }).join('') || `<tr><td colspan="4" style="padding:16px 14px;color:var(--tx2)">No parameters match your filter.</td></tr>`;
 }
