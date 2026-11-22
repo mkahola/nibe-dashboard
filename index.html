@@ -406,7 +406,9 @@ async function apiGet(path) {
   }
   let res;
   try {
-    res = await fetch(API_BASE + path, { headers: { Authorization: 'Bearer ' + accessToken } });
+    // myUplink rejects the browser's default multi-value Accept-Language (e.g. "fi-FI,fi;q=0.9"),
+    // so send a single, valid locale.
+    res = await fetch(API_BASE + path, { headers: { Authorization: 'Bearer ' + accessToken, 'Accept-Language': 'en-GB' } });
   } catch (e) {
     throw new Error('Network/CORS error calling ' + path + ' (' + e.message + '). If the browser console mentions CORS, api.myuplink.com is not allowing requests from this site and a small proxy is needed.');
   }
