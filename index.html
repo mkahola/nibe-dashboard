@@ -60,12 +60,12 @@ header{background:var(--bg2);border-bottom:1px solid var(--br);padding:12px 22px
 .alarm.on{display:flex;align-items:center;gap:8px}
 
 /* Status cards */
-.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .sc{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:13px 15px}
 .sl{font-size:11px;color:var(--tx2);margin-bottom:5px}
 .sv{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
 .su{font-size:11px;color:var(--tx2);margin-top:3px}
-.sc.bl .sv{color:var(--bl)}.sc.tl .sv{color:var(--tl)}.sc.am .sv{color:var(--am)}.sc.pu .sv{color:var(--pu)}
+.sc.bl .sv{color:var(--bl)}.sc.tl .sv{color:var(--tl)}.sc.am .sv{color:var(--am)}.sc.pu .sv{color:var(--pu)}.sc.cy .sv{color:var(--cy)}
 .pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
 .running{background:#0d2d1a;color:var(--tl)}.stopped{background:#1a1a1a;color:var(--tx2)}
 .starting{background:#2d2200;color:var(--am)}.stopping{background:#2d1a0a;color:var(--or)}
@@ -104,11 +104,6 @@ canvas#ch{width:100%;display:block}
 .tab.active{color:var(--bl);border-bottom-color:var(--bl)}
 .tab-panel{display:none}.tab-panel.active{display:block}
 
-/* System info card */
-.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.info-card{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:12px 15px}
-.info-label{font-size:11px;color:var(--tx2);margin-bottom:3px}
-.info-val{font-size:14px;font-weight:500}
 
 footer{text-align:center;padding:28px 0 18px;color:var(--tx2);font-size:11px}
 footer a{color:var(--bl);text-decoration:none}
@@ -185,7 +180,6 @@ footer a{color:var(--bl);text-decoration:none}
   <div class="tabs">
     <div class="tab active" onclick="switchTab('overview')">Overview</div>
     <div class="tab" onclick="switchTab('all-params')">All parameters</div>
-    <div class="tab" onclick="switchTab('system')">System info</div>
   </div>
 
   <!-- Overview tab -->
@@ -196,6 +190,7 @@ footer a{color:var(--bl);text-decoration:none}
       <div class="sc bl"><div class="sl">Degree minutes</div><div class="sv" id="s-dm">—</div><div class="su">DM</div></div>
       <div class="sc am"><div class="sl">El. addition</div><div class="sv" id="s-el">—</div><div class="su">kW</div></div>
       <div class="sc pu"><div class="sl">Hot water mode</div><div class="sv" id="s-hw" style="font-size:15px;padding-top:4px">—</div><div class="su">&nbsp;</div></div>
+      <div class="sc cy"><div class="sl">Power consumption</div><div class="sv" id="s-pw">—</div><div class="su" id="s-pw-sub">kW</div></div>
     </div>
 
     <div class="sec">Temperatures</div>
@@ -219,13 +214,6 @@ footer a{color:var(--bl);text-decoration:none}
     <div id="param-count" style="font-size:11px;color:var(--tx2);padding:4px 2px"></div>
   </div>
 
-  <!-- System info tab -->
-  <div class="tab-panel" id="tab-system">
-    <div class="sec">System information</div>
-    <div class="info-grid" id="sys-info"></div>
-    <div class="sec" style="margin-top:24px">Devices</div>
-    <div class="info-grid" id="dev-info"></div>
-  </div>
 </div>
 
 <footer>
@@ -471,7 +459,6 @@ async function startDashboard() {
     if (!currentDeviceId && devices.length) currentDeviceId = devices[0].id;
     localStorage.setItem('nibe_device_id', currentDeviceId);
 
-    renderSystemInfo();
     await pollData();
     pollTimer = setInterval(pollData, POLL_MS);
     setBadge('ok', '⬤ Live');
@@ -540,6 +527,26 @@ function render(params) {
   document.getElementById('s-el').textContent = txt(findP([43084], /add(ition)?.*(power|kw)|el\.? add/i));
   document.getElementById('s-hw').textContent = txt(findP([47041], /hot water.*(mode|demand)|comfort/i));
 
+  // Power consumption (kW) = (BE1 + BE2 + BE3 phase currents) x 230 V
+  const PHASE_V = 230;
+  const phaseA = (name, id) => {
+    const p = paramVal(id) || allParams.find(q => new RegExp('\\b' + name + '\\b', 'i').test(q.parameterName || '') && (q.parameterUnit || '') === 'A');
+    return p && typeof p.value === 'number' ? p.value : null;
+  };
+  const amps = ['BE1', 'BE2', 'BE3'].map((n, i) => ({ n, a: phaseA(n, [40079, 40081, 40083][i]) }));
+  const found = amps.filter(x => x.a !== null);
+  const pwEl = document.getElementById('s-pw'), pwSub = document.getElementById('s-pw-sub');
+  if (found.length) {
+    const sumA = found.reduce((s, x) => s + x.a, 0);
+    pwEl.textContent = (sumA * PHASE_V / 1000).toFixed(2);
+    pwSub.textContent = 'kW · ' + sumA.toFixed(1) + ' A × ' + PHASE_V + ' V';
+    pwSub.title = amps.map(x => x.n + ': ' + (x.a === null ? 'n/a' : x.a.toFixed(1) + ' A')).join(', ');
+  } else {
+    pwEl.textContent = '—';
+    pwSub.textContent = 'kW · BE1–BE3 current not reported';
+    pwSub.title = '';
+  }
+
   // Alarm
   const alarmP = findP([45001], /^alarm/i);
   const alarmEl = document.getElementById('alarm');
@@ -596,28 +603,6 @@ function renderParamTable(params) {
 }
 
 function filterParams() { renderParamTable(allParams); }
-
-function renderSystemInfo() {
-  const sys = systems.find(s => (s.devices||[]).some(d => d.id === currentDeviceId));
-  const dev = devices.find(d => d.id === currentDeviceId);
-  if (sys) {
-    document.getElementById('sys-info').innerHTML = [
-      ['System ID',   sys.systemId  || '—'],
-      ['System name', sys.name      || '—'],
-      ['Country',     sys.country   || '—'],
-      ['Security level', sys.securityLevel || '—'],
-    ].map(([l,v]) => `<div class="info-card"><div class="info-label">${l}</div><div class="info-val">${v}</div></div>`).join('');
-  }
-  if (dev) {
-    document.getElementById('dev-info').innerHTML = [
-      ['Device ID',     dev.id                          || '—'],
-      ['Product name',  dev.product?.name               || '—'],
-      ['Serial number', dev.product?.serialNumber       || '—'],
-      ['Firmware',      dev.firmware?.currentFwVersion  || '—'],
-      ['Connection',    dev.connectionState             || '—'],
-    ].map(([l,v]) => `<div class="info-card"><div class="info-label">${l}</div><div class="info-val">${v}</div></div>`).join('');
-  }
-}
 
 /* ══════════════════════════════════════════
    TEMPERATURE GRID BUILD
@@ -698,7 +683,6 @@ function loadDemo() {
   document.getElementById('dashboard').style.display   = 'block';
   setBadge('auth', '⬤ Demo mode');
   buildTempGrid(); buildCanvas();
-  renderSystemInfo_demo();
   tickDemo();
   pollTimer = setInterval(tickDemo, 5000);
 }
@@ -721,6 +705,9 @@ function tickDemo() {
     {parameterId:43086, parameterName:'Priority',                value:30,              displayValue:'Heating',           parameterUnit:''},
     {parameterId:43427, parameterName:'Compressor state',        value:60,              displayValue:'Running',           parameterUnit:''},
     {parameterId:45001, parameterName:'Alarm number',            value:0,               displayValue:'0',                 parameterUnit:''},
+    {parameterId:40079, parameterName:'current (BE1)', value:make(5,1.5,0.2), displayValue:make(5,1.5,0.2)+'A', parameterUnit:'A'},
+    {parameterId:40081, parameterName:'current (BE2)', value:make(4,1.5,0.6), displayValue:make(4,1.5,0.6)+'A', parameterUnit:'A'},
+    {parameterId:40083, parameterName:'current (BE3)', value:make(6,1.5,1.1), displayValue:make(6,1.5,1.1)+'A', parameterUnit:'A'},
     {parameterId:43084, parameterName:'Int el add power',        value:0,               displayValue:'0.00 kW',           parameterUnit:'kW'},
     {parameterId:47041, parameterName:'Hot water mode',          value:1,               displayValue:'Normal',            parameterUnit:''},
     {parameterId:47007, parameterName:'Heat curve S1',           value:9,               displayValue:'9',                 parameterUnit:''},
@@ -733,21 +720,6 @@ function tickDemo() {
   allParams = fakeParams;
   render(fakeParams);
   document.getElementById('upd').textContent = 'Demo · ' + new Date().toLocaleTimeString();
-}
-
-function renderSystemInfo_demo() {
-  document.getElementById('sys-info').innerHTML = [
-    ['System ID',   'demo-system-001'],
-    ['System name', 'My Home — Demo'],
-    ['Country',     'FI'],
-  ].map(([l,v]) => `<div class="info-card"><div class="info-label">${l}</div><div class="info-val">${v}</div></div>`).join('');
-  document.getElementById('dev-info').innerHTML = [
-    ['Device ID',    'demo-device-001'],
-    ['Product name', 'NIBE F470'],
-    ['Serial number','DEMO12345678'],
-    ['Firmware',     '1.00.00'],
-    ['Connection',   'Connected'],
-  ].map(([l,v]) => `<div class="info-card"><div class="info-label">${l}</div><div class="info-val">${v}</div></div>`).join('');
 }
 
 /* ══════════════════════════════════════════
@@ -763,7 +735,7 @@ function setBadge(state, text) {
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t,i) => {
-    const names = ['overview','all-params','system'];
+    const names = ['overview','all-params'];
     t.classList.toggle('active', names[i] === name);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-'+name));
