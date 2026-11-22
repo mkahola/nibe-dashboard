@@ -445,7 +445,7 @@ async function loadSystemStatus(systemId) {
 async function startDashboard() {
   document.getElementById('setup-panel').style.display = 'none';
   document.getElementById('auth-panel').style.display  = 'none';
-  document.getElementById('dashboard').style.display   = '';
+  document.getElementById('dashboard').style.display   = 'block';
   setBadge('auth', '⬤ Loading…');
   buildTempGrid();
   buildCanvas();
@@ -693,7 +693,7 @@ function drawChart() {
 function loadDemo() {
   demoMode = true;
   document.getElementById('setup-panel').style.display = 'none';
-  document.getElementById('dashboard').style.display   = '';
+  document.getElementById('dashboard').style.display   = 'block';
   setBadge('auth', '⬤ Demo mode');
   buildTempGrid(); buildCanvas();
   renderSystemInfo_demo();
