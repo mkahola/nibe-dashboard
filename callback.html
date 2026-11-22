@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>myUplink callback</title>
+<style>
+  body{background:#0d1117;color:#e6edf3;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+  .box{max-width:460px;padding:24px;background:#161b22;border:1px solid #30363d;border-radius:10px;text-align:center}
+  .err{color:#f85149}
+  a{color:#58a6ff}
+</style>
+</head>
+<body>
+<div class="box" id="box">Completing sign-in…</div>
+<script>
+  // OAuth redirect target. Forwards ?code=... to the dashboard (index.html in the same folder).
+  const p = new URLSearchParams(location.search);
+  const box = document.getElementById('box');
+  if (p.has('error')) {
+    box.innerHTML = '<p class="err">Authorization failed: ' +
+      (p.get('error_description') || p.get('error')).replace(/[<>&]/g, '') +
+      '</p><p><a href="index.html">Back to dashboard</a></p>';
+  } else if (p.has('code')) {
+    location.replace('index.html?' + p.toString());
+  } else {
+    box.innerHTML = '<p>No authorization code in the URL.</p><p><a href="index.html">Back to dashboard</a></p>';
+  }
+</script>
+</body>
+</html>

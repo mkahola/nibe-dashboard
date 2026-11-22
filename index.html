@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nibe F470 — myUplink Dashboard</title>
+<style>
+:root {
+  --bg:    #0d1117; --bg2: #161b22; --bg3: #21262d;
+  --br:    #30363d; --tx:  #e6edf3; --tx2: #8b949e;
+  --bl:    #58a6ff; --tl:  #39d353; --am:  #d29922;
+  --rd:    #f85149; --or:  #e3b341; --pu:  #a371f7; --cy: #56d4c8;
+  --r: 10px; --font: 'Segoe UI', system-ui, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px;min-height:100vh}
+
+/* ── Header ── */
+header{background:var(--bg2);border-bottom:1px solid var(--br);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-icon{width:32px;height:32px;background:linear-gradient(135deg,#1f6feb,#388bfd);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.brand-title{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.brand-sub{font-size:11px;color:var(--tx2)}
+.hdr-right{display:flex;align-items:center;gap:14px}
+#badge{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:600;background:#0c2038;color:var(--bl);border:1px solid #1f3a54}
+#badge.ok{background:#0d2d1a;color:var(--tl);border-color:#1a4d2a}
+#badge.err{background:#2d0d0d;color:var(--rd);border-color:#4d1a1a}
+#badge.auth{background:#2d220a;color:var(--am);border-color:#4d3a0a}
+#upd{font-size:11px;color:var(--tx2)}
+
+/* ── Setup panel ── */
+#setup-panel{max-width:560px;margin:48px auto;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:28px 28px 24px}
+#setup-panel h2{font-size:17px;font-weight:600;margin-bottom:6px}
+#setup-panel p{font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:18px}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:12px;color:var(--tx2);margin-bottom:5px;font-weight:500}
+.form-row input{width:100%;background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:8px 11px;color:var(--tx);font-size:13px;outline:none;transition:border-color .15s}
+.form-row input:focus{border-color:var(--bl)}
+.form-row small{font-size:11px;color:var(--tx2);margin-top:4px;display:block}
+.btn{background:var(--bl);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn.secondary{background:transparent;color:var(--tx2);border:1px solid var(--br);margin-left:10px}
+.btn.secondary:hover{background:var(--bg3)}
+.steps{background:var(--bg3);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:var(--tx2);line-height:1.8}
+.steps strong{color:var(--tx)}
+.steps a{color:var(--bl);text-decoration:none}
+.setup-note{font-size:11px;color:var(--tx2);margin-top:14px;padding-top:14px;border-top:1px solid var(--br)}
+
+/* ── Auth callback panel ── */
+#auth-panel{max-width:480px;margin:60px auto;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:26px}
+#auth-panel h2{font-size:16px;font-weight:600;margin-bottom:8px}
+#auth-panel p{font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:14px}
+#auth-url-box{background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:10px 12px;font-size:12px;word-break:break-all;color:var(--bl);margin-bottom:14px;user-select:all}
+.form-row.code input{font-family:monospace}
+
+/* ── Main dashboard ── */
+#dashboard{display:none;max-width:1200px;margin:0 auto;padding:22px 18px}
+.sec{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.8px;margin:24px 0 10px}
+.alarm{display:none;background:#2d1a0a;border:1px solid #6e3a0f;color:var(--or);padding:9px 14px;border-radius:var(--r);margin-bottom:16px;font-size:12px;font-weight:500}
+.alarm.on{display:flex;align-items:center;gap:8px}
+
+/* Status cards */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sc{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:13px 15px}
+.sl{font-size:11px;color:var(--tx2);margin-bottom:5px}
+.sv{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.su{font-size:11px;color:var(--tx2);margin-top:3px}
+.sc.bl .sv{color:var(--bl)}.sc.tl .sv{color:var(--tl)}.sc.am .sv{color:var(--am)}.sc.pu .sv{color:var(--pu)}
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.running{background:#0d2d1a;color:var(--tl)}.stopped{background:#1a1a1a;color:var(--tx2)}
+.starting{background:#2d2200;color:var(--am)}.stopping{background:#2d1a0a;color:var(--or)}
+
+/* Temperature grid */
+.tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px}
+.tc{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.ti{width:33px;height:33px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.tn{font-size:11px;color:var(--tx2);margin-bottom:2px}
+.tv{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* All parameters table */
+#params-table-wrap{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);overflow:hidden;margin-bottom:8px}
+.pt{width:100%;border-collapse:collapse}
+.pt th{text-align:left;padding:9px 14px;font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--br);background:var(--bg3)}
+.pt td{padding:8px 14px;border-bottom:1px solid var(--br);font-size:12px}
+.pt tr:last-child td{border-bottom:none}
+.pt tr:hover td{background:#1a1f26}
+.vc{font-weight:600;color:var(--bl);font-variant-numeric:tabular-nums}
+.uc{color:var(--tx2);font-size:11px}
+.pt-id{color:var(--tx2);font-family:monospace;font-size:11px}
+.search-wrap{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--br)}
+.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:7px 11px;color:var(--tx);font-size:13px;outline:none}
+.search-wrap input:focus{border-color:var(--bl)}
+
+/* Chart */
+.chart-box{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:14px}
+canvas#ch{width:100%;display:block}
+
+/* Device selector */
+.dev-select{background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:6px 10px;color:var(--tx);font-size:13px;outline:none;cursor:pointer}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--br);margin-bottom:16px}
+.tab{padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--tx2);transition:color .15s}
+.tab.active{color:var(--bl);border-bottom-color:var(--bl)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* System info card */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.info-card{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:12px 15px}
+.info-label{font-size:11px;color:var(--tx2);margin-bottom:3px}
+.info-val{font-size:14px;font-weight:500}
+
+footer{text-align:center;padding:28px 0 18px;color:var(--tx2);font-size:11px}
+footer a{color:var(--bl);text-decoration:none}
+
+@media(max-width:600px){.sg{grid-template-columns:repeat(2,1fr)}.tg{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">🌡</div>
+    <div>
+      <div class="brand-title">Nibe F470 — myUplink</div>
+      <div class="brand-sub">Cloud API v2 Dashboard</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span id="upd"></span>
+    <span id="badge">⬤ Not connected</span>
+    <select class="dev-select" id="device-sel" style="display:none" onchange="onDeviceChange()"></select>
+  </div>
+</header>
+
+<!-- ════════════════ SETUP PANEL ════════════════ -->
+<div id="setup-panel">
+  <h2>Connect to myUplink API</h2>
+  <p>Enter your myUplink application credentials to connect. Data is fetched directly from Nibe's cloud — no local hardware required.</p>
+
+  <div class="steps">
+    <strong>First time? Register a free API application:</strong><br>
+    1. Sign in at <a href="https://myuplink.com" target="_blank">myuplink.com</a> and link your pump<br>
+    2. Go to <a href="https://dev.myuplink.com/apps" target="_blank">dev.myuplink.com/apps</a> → <em>Create Application</em><br>
+    3. Set <strong>Callback URL</strong> to exactly: <code id="cb-url-hint" style="color:var(--bl)"></code><br>
+    4. Paste the <strong>Client ID</strong> and <strong>Client Secret</strong> below
+  </div>
+
+  <div class="form-row">
+    <label>Client ID</label>
+    <input type="text" id="client-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+  </div>
+  <div class="form-row">
+    <label>Client Secret</label>
+    <input type="password" id="client-secret" placeholder="Your application secret">
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" onclick="startAuth()">Authorize with myUplink →</button>
+    <button class="btn secondary" onclick="loadDemo()">Try demo mode</button>
+  </div>
+  <div class="setup-note">
+    Credentials are stored only in your browser's <code>localStorage</code> and never sent anywhere except to <code>api.myuplink.com</code>. Use HTTPS.
+  </div>
+</div>
+
+<!-- ════════════════ AUTH CALLBACK PANEL ════════════════ -->
+<div id="auth-panel" style="display:none">
+  <h2>Paste the authorization code</h2>
+  <p>A browser tab opened the myUplink authorization page. After you approve access, myUplink redirects you back here with a code in the URL — or you can copy it from the redirect URL bar.</p>
+  <div id="auth-url-box"></div>
+  <div class="form-row code">
+    <label>Authorization Code (from URL parameter <code>?code=…</code>)</label>
+    <input type="text" id="auth-code-input" placeholder="Paste the code here…">
+  </div>
+  <button class="btn" onclick="exchangeCode()">Exchange for access token</button>
+  <button class="btn secondary" onclick="showSetup()">Back</button>
+  <div id="auth-error" style="margin-top:12px;font-size:12px;color:var(--rd);display:none"></div>
+</div>
+
+<!-- ════════════════ DASHBOARD ════════════════ -->
+<div id="dashboard">
+  <div class="alarm" id="alarm">⚠ Active alarm — code <span id="alcode">—</span></div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('overview')">Overview</div>
+    <div class="tab" onclick="switchTab('all-params')">All parameters</div>
+    <div class="tab" onclick="switchTab('system')">System info</div>
+  </div>
+
+  <!-- Overview tab -->
+  <div class="tab-panel active" id="tab-overview">
+    <div class="sec">Operating status</div>
+    <div class="sg">
+      <div class="sc tl"><div class="sl">Compressor</div><div class="sv" id="s-comp">—</div><div class="su" id="s-prio">—</div></div>
+      <div class="sc bl"><div class="sl">Degree minutes</div><div class="sv" id="s-dm">—</div><div class="su">DM</div></div>
+      <div class="sc am"><div class="sl">El. addition</div><div class="sv" id="s-el">—</div><div class="su">kW</div></div>
+      <div class="sc pu"><div class="sl">Hot water mode</div><div class="sv" id="s-hw" style="font-size:15px;padding-top:4px">—</div><div class="su">&nbsp;</div></div>
+    </div>
+
+    <div class="sec">Temperatures</div>
+    <div class="tg" id="tgrid"></div>
+
+    <div class="sec">Temperature history (last 40 readings)</div>
+    <div class="chart-box"><canvas id="ch" height="180"></canvas></div>
+  </div>
+
+  <!-- All parameters tab -->
+  <div class="tab-panel" id="tab-all-params">
+    <div id="params-table-wrap">
+      <div class="search-wrap">
+        <input type="text" id="param-search" placeholder="Filter parameters by name, ID, or value…" oninput="filterParams()">
+      </div>
+      <table class="pt">
+        <thead><tr><th>ID</th><th>Parameter name</th><th>Value</th><th>Unit</th></tr></thead>
+        <tbody id="param-tbody"><tr><td colspan="4" style="padding:20px 14px;color:var(--tx2)">Loading parameters…</td></tr></tbody>
+      </table>
+    </div>
+    <div id="param-count" style="font-size:11px;color:var(--tx2);padding:4px 2px"></div>
+  </div>
+
+  <!-- System info tab -->
+  <div class="tab-panel" id="tab-system">
+    <div class="sec">System information</div>
+    <div class="info-grid" id="sys-info"></div>
+    <div class="sec" style="margin-top:24px">Devices</div>
+    <div class="info-grid" id="dev-info"></div>
+  </div>
+</div>
+
+<footer>
+  Nibe F470 myUplink Dashboard &bull;
+  API: <a href="https://api.myuplink.com/swagger/index.html" target="_blank">api.myuplink.com</a> &bull;
+  Register app: <a href="https://dev.myuplink.com/apps" target="_blank">dev.myuplink.com</a>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════
+   CONFIG & CONSTANTS
+══════════════════════════════════════════ */
+const API_BASE     = 'https://api.myuplink.com';
+const AUTH_URL     = 'https://api.myuplink.com/oauth/authorize';
+const TOKEN_URL    = 'https://api.myuplink.com/oauth/token';
+const REDIRECT_URI = new URL('callback.html', window.location.href).href;
+const SCOPE        = 'READSYSTEM offline_access';
+const POLL_MS      = 60000; // myUplink recommends 60s polling
+
+// Well-known F470 parameter IDs → nice display names + category
+const KNOWN = {
+  40004: {label:'Outdoor temp',        cat:'temp',   icon:'🌤', col:'#58a6ff', bg:'#0c2038'},
+  40008: {label:'Supply temp S1',      cat:'temp',   icon:'↑',  col:'#e3b341', bg:'#2d1a0a'},
+  40012: {label:'Return temp S1',      cat:'temp',   icon:'↓',  col:'#39d353', bg:'#0d2d1a'},
+  40013: {label:'HW top',             cat:'temp',   icon:'💧', col:'#d29922', bg:'#2d220a'},
+  40014: {label:'HW load',            cat:'temp',   icon:'💧', col:'#d29922', bg:'#2d200a'},
+  40018: {label:'Hot gas temp',       cat:'temp',   icon:'🔥', col:'#f85149', bg:'#2d0d0d'},
+  40023: {label:'Compressor temp',    cat:'temp',   icon:'⚙',  col:'#a371f7', bg:'#200d2d'},
+  40033: {label:'Room temp S1',       cat:'temp',   icon:'🏠', col:'#56d4c8', bg:'#0d2d28'},
+  43009: {label:'Calc. supply S1',    cat:'temp',   icon:'≈',  col:'#85c155', bg:'#1a2d0a'},
+  43005: {label:'Degree minutes',     cat:'status'},
+  43086: {label:'Priority',           cat:'status'},
+  43427: {label:'Compressor state',   cat:'status'},
+  45001: {label:'Alarm number',       cat:'status'},
+  43084: {label:'El. addition power', cat:'status'},
+  47041: {label:'Hot water mode',     cat:'setting'},
+  47007: {label:'Heat curve S1',      cat:'setting'},
+  47011: {label:'Curve offset S1',    cat:'setting'},
+  47015: {label:'Min supply S1',      cat:'setting'},
+  47019: {label:'Max supply S1',      cat:'setting'},
+  47206: {label:'DM start heating',   cat:'setting'},
+  47208: {label:'DM start el.add',    cat:'setting'},
+};
+const COMP_STATE = {20:'stopped', 40:'starting', 60:'running', 100:'stopping'};
+const COMP_LABEL = {20:'Stopped', 40:'Starting', 60:'Running', 100:'Stopping'};
+const PRIO_LABEL = {10:'Off', 20:'Hot water', 30:'Heating', 40:'Pool', 60:'Cooling'};
+const HW_LABEL   = {0:'Economy', 1:'Normal', 2:'Luxury'};
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let accessToken  = localStorage.getItem('nibe_access_token')  || '';
+let refreshToken = localStorage.getItem('nibe_refresh_token') || '';
+let tokenExpiry  = +localStorage.getItem('nibe_token_expiry') || 0;
+let clientId     = localStorage.getItem('nibe_client_id')     || '';
+let clientSecret = localStorage.getItem('nibe_client_secret') || '';
+let currentDeviceId = localStorage.getItem('nibe_device_id') || '';
+let allParams    = [];
+let pollTimer    = null;
+let systems      = [];
+let devices      = [];
+const N = 40;
+let hist = {o:Array(N).fill(null), s:Array(N).fill(null), r:Array(N).fill(null)};
+let demoMode     = false;
+let _demoT       = 0;
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+document.getElementById('cb-url-hint').textContent = REDIRECT_URI;
+document.getElementById('client-id').value = clientId;
+
+// Handle OAuth redirect callback
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('code')) {
+  const code = urlParams.get('code');
+  history.replaceState({}, '', window.location.pathname);
+  showAuthPanel();
+  document.getElementById('auth-code-input').value = code;
+  exchangeCode();
+} else if (accessToken && Date.now() < tokenExpiry - 5000) {
+  startDashboard();
+} else if (refreshToken) {
+  doRefresh().then(ok => ok ? startDashboard() : showSetup()).catch(() => showSetup());
+} else {
+  showSetup();
+}
+
+/* ══════════════════════════════════════════
+   AUTH FLOW
+══════════════════════════════════════════ */
+function showSetup() {
+  document.getElementById('setup-panel').style.display = '';
+  document.getElementById('auth-panel').style.display  = 'none';
+  document.getElementById('dashboard').style.display   = 'none';
+  setBadge('not', '⬤ Not connected');
+}
+function showAuthPanel() {
+  document.getElementById('setup-panel').style.display = 'none';
+  document.getElementById('auth-panel').style.display  = '';
+  document.getElementById('dashboard').style.display   = 'none';
+}
+
+function startAuth() {
+  clientId     = document.getElementById('client-id').value.trim();
+  clientSecret = document.getElementById('client-secret').value.trim();
+  if (!clientId || !clientSecret) { alert('Please enter both Client ID and Client Secret.'); return; }
+  localStorage.setItem('nibe_client_id',     clientId);
+  localStorage.setItem('nibe_client_secret', clientSecret);
+
+  const state  = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  const params = new URLSearchParams({
+    response_type: 'code', client_id: clientId,
+    redirect_uri:  REDIRECT_URI, scope: SCOPE, state
+  });
+  const authFullUrl = AUTH_URL + '?' + params.toString();
+  document.getElementById('auth-url-box').textContent = authFullUrl;
+  showAuthPanel();
+  window.open(authFullUrl, '_blank');
+}
+
+async function exchangeCode() {
+  const code = document.getElementById('auth-code-input').value.trim();
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+  if (!code) { errEl.textContent = 'Please paste the authorization code.'; errEl.style.display=''; return; }
+
+  clientId     = localStorage.getItem('nibe_client_id')     || document.getElementById('client-id').value.trim();
+  clientSecret = localStorage.getItem('nibe_client_secret') || document.getElementById('client-secret').value.trim();
+
+  try {
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code', code,
+      client_id: clientId, client_secret: clientSecret,
+      redirect_uri: REDIRECT_URI
+    });
+    const res  = await fetch(TOKEN_URL, { method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'} });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error_description || json.error || 'Token exchange failed');
+    saveTokens(json);
+    startDashboard();
+  } catch(e) {
+    errEl.textContent = '❌ ' + e.message;
+    errEl.style.display = '';
+  }
+}
+
+async function doRefresh() {
+  try {
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token', refresh_token: refreshToken,
+      client_id: clientId, client_secret: clientSecret
+    });
+    const res  = await fetch(TOKEN_URL, { method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'} });
+    const json = await res.json();
+    if (!res.ok) return false;
+    saveTokens(json);
+    return true;
+  } catch { return false; }
+}
+
+function saveTokens(json) {
+  accessToken  = json.access_token;
+  refreshToken = json.refresh_token || refreshToken;
+  tokenExpiry  = Date.now() + (json.expires_in || 3600) * 1000;
+  localStorage.setItem('nibe_access_token',  accessToken);
+  localStorage.setItem('nibe_refresh_token', refreshToken);
+  localStorage.setItem('nibe_token_expiry',  tokenExpiry);
+}
+
+/* ══════════════════════════════════════════
+   API CALLS
+══════════════════════════════════════════ */
+async function apiGet(path) {
+  if (Date.now() > tokenExpiry - 10000) {
+    const ok = await doRefresh();
+    if (!ok) { showSetup(); throw new Error('Session expired'); }
+  }
+  const res = await fetch(API_BASE + path, { headers: { Authorization: 'Bearer ' + accessToken } });
+  if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
+  return res.json();
+}
+
+async function loadSystems() {
+  const data = await apiGet('/v2/systems/me');
+  systems = data.systems || [];
+  return systems;
+}
+
+async function loadDevicePoints(deviceId) {
+  return apiGet(`/v2/devices/${deviceId}/points`);
+}
+
+async function loadSystemStatus(systemId) {
+  return apiGet(`/v2/systems/${systemId}/status`);
+}
+
+/* ══════════════════════════════════════════
+   DASHBOARD BOOT
+══════════════════════════════════════════ */
+async function startDashboard() {
+  document.getElementById('setup-panel').style.display = 'none';
+  document.getElementById('auth-panel').style.display  = 'none';
+  document.getElementById('dashboard').style.display   = '';
+  setBadge('auth', '⬤ Loading…');
+  buildTempGrid();
+  buildCanvas();
+
+  try {
+    const sysList = await loadSystems();
+    if (!sysList.length) throw new Error('No systems found in your myUplink account.');
+
+    // Populate device selector
+    devices = [];
+    for (const sys of sysList) {
+      for (const dev of (sys.devices || [])) {
+        devices.push({ ...dev, systemId: sys.systemId, systemName: sys.name });
+      }
+    }
+    const sel = document.getElementById('device-sel');
+    sel.innerHTML = devices.map(d =>
+      `<option value="${d.id}" ${d.id === currentDeviceId ? 'selected' : ''}>${d.product?.name || d.id}</option>`
+    ).join('');
+    sel.style.display = devices.length > 1 ? '' : 'none';
+    if (!currentDeviceId && devices.length) currentDeviceId = devices[0].id;
+    localStorage.setItem('nibe_device_id', currentDeviceId);
+
+    renderSystemInfo();
+    await pollData();
+    pollTimer = setInterval(pollData, POLL_MS);
+    setBadge('ok', '⬤ Live');
+  } catch(e) {
+    setBadge('err', '⬤ Error');
+    document.getElementById('upd').textContent = e.message;
+  }
+}
+
+function onDeviceChange() {
+  currentDeviceId = document.getElementById('device-sel').value;
+  localStorage.setItem('nibe_device_id', currentDeviceId);
+  clearInterval(pollTimer);
+  pollData().then(() => { pollTimer = setInterval(pollData, POLL_MS); });
+}
+
+async function pollData() {
+  try {
+    const points = await loadDevicePoints(currentDeviceId);
+    allParams = Array.isArray(points) ? points : (points.parameterGroups
+      ? points.parameterGroups.flatMap(g => g.parameters || [])
+      : []);
+    render(allParams);
+    setBadge('ok', '⬤ Live');
+    document.getElementById('upd').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    setBadge('err', '⬤ Error');
+    document.getElementById('upd').textContent = e.message;
+  }
+}
+
+/* ══════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════ */
+function paramVal(id) {
+  const p = allParams.find(p => +p.parameterId === +id || p.parameterName === String(id));
+  return p ? p : null;
+}
+function raw(id) { const p = paramVal(id); return p ? p.value : null; }
+function disp(id) { const p = paramVal(id); return p ? (p.displayValue || String(p.value)) : '—'; }
+
+function render(params) {
+  // Status cards
+  const cst = raw(43427);
+  const cls  = COMP_STATE[cst] || 'stopped';
+  const lbl  = COMP_LABEL[cst] || '—';
+  document.getElementById('s-comp').innerHTML = `<span class="pill ${cls}">${lbl}</span>`;
+  const prio = raw(43086);
+  document.getElementById('s-prio').textContent = PRIO_LABEL[prio] || disp(43086);
+  document.getElementById('s-dm').textContent = fmt(raw(43005), 0);
+  document.getElementById('s-el').textContent = fmt(raw(43084), 2);
+  const hwm = raw(47041);
+  document.getElementById('s-hw').textContent = HW_LABEL[hwm] || disp(47041);
+
+  // Alarm
+  const alarm = raw(45001);
+  const alarmEl = document.getElementById('alarm');
+  if (alarm && alarm !== 0) { alarmEl.classList.add('on'); document.getElementById('alcode').textContent = alarm; }
+  else alarmEl.classList.remove('on');
+
+  // Temperature cards
+  [40004,40008,40012,40013,40014,40018,40023,40033,43009].forEach(id => {
+    const el = document.getElementById('t-'+id);
+    if (el) el.textContent = disp(id) || '—';
+  });
+
+  // History
+  hist.o.push(raw(40004)); hist.o.shift();
+  hist.s.push(raw(40008)); hist.s.shift();
+  hist.r.push(raw(40033)); hist.r.shift();
+  drawChart();
+
+  // All params table
+  renderParamTable(params);
+}
+
+function renderParamTable(params) {
+  const q = (document.getElementById('param-search').value || '').toLowerCase();
+  const filtered = params.filter(p => {
+    if (!q) return true;
+    const name = (p.parameterName || '').toLowerCase();
+    const id   = String(p.parameterId || '');
+    const val  = String(p.displayValue || p.value || '').toLowerCase();
+    return name.includes(q) || id.includes(q) || val.includes(q);
+  });
+  document.getElementById('param-count').textContent = `${filtered.length} of ${params.length} parameters`;
+  document.getElementById('param-tbody').innerHTML = filtered.map(p => {
+    const known = KNOWN[+p.parameterId];
+    const name  = known ? known.label : (p.parameterName || '—');
+    const val   = p.displayValue !== undefined ? p.displayValue : (p.value !== undefined ? p.value : '—');
+    const unit  = p.parameterUnit || '';
+    return `<tr>
+      <td class="pt-id">${p.parameterId || '—'}</td>
+      <td>${name}</td>
+      <td class="vc">${val}</td>
+      <td class="uc">${unit}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="4" style="padding:16px 14px;color:var(--tx2)">No parameters match your filter.</td></tr>`;
+}
+
+function filterParams() { renderParamTable(allParams); }
+
+function renderSystemInfo() {
+  const sys = systems.find(s => (s.devices||[]).some(d => d.id === currentDeviceId));
+  const dev = devices.find(d => d.id === currentDeviceId);
+  if (sys) {
+    document.getElementById('sys-info').innerHTML = [
+      ['System ID',   sys.systemId  || '—'],
+      ['System name', sys.name      || '—'],
+      ['Country',     sys.country   || '—'],
+      ['Security level', sys.securityLevel || '—'],
+    ].map(([l,v]) => `<div class="info-card"><div class="info-label">${l}</div><div class="info-val">${v}</div></div>`).join('');
+  }
+  if (dev) {
+    document.getElementById('dev-info').innerHTML = [
+      ['Device ID',     dev.id                          || '—'],
+      ['Product name',  dev.product?.name               || '—'],
+      ['Serial number', dev.product?.serialNumber       || '—'],
+      ['Firmware',      dev.firmware?.currentFwVersion  || '—'],
+      ['Connection',    dev.connectionState             || '—'],
+    ].map(([l,v]) => `<div class="info-card"><div class="info-label">${l}</div><div class="info-val">${v}</div></div>`).join('');
+  }
+}
+
+/* ══════════════════════════════════════════
+   TEMPERATURE GRID BUILD
+══════════════════════════════════════════ */
+function buildTempGrid() {
+  const ids = [40004,40033,40008,40012,43009,40013,40014,40023,40018];
+  const grid = document.getElementById('tgrid');
+  grid.innerHTML = '';
+  ids.forEach(id => {
+    const k = KNOWN[id] || {label:'Sensor '+id, icon:'🌡', col:'#8b949e', bg:'#1a1a1a'};
+    const d = document.createElement('div');
+    d.className = 'tc';
+    d.innerHTML = `<div class="ti" style="background:${k.bg||'#1a1a1a'};color:${k.col||'#8b949e'}">${k.icon||'🌡'}</div>
+      <div><div class="tn">${k.label}</div><div class="tv" id="t-${id}" style="color:${k.col||'#8b949e'}">—</div></div>`;
+    grid.appendChild(d);
+  });
+}
+
+/* ══════════════════════════════════════════
+   CANVAS CHART
+══════════════════════════════════════════ */
+function buildCanvas() {
+  const canvas = document.getElementById('ch');
+  function resz() {
+    canvas.width  = canvas.offsetWidth  * devicePixelRatio;
+    canvas.height = canvas.offsetHeight * devicePixelRatio;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    drawChart();
+  }
+  window.addEventListener('resize', resz);
+  resz();
+}
+
+function drawChart() {
+  const canvas = document.getElementById('ch');
+  const ctx    = canvas.getContext('2d');
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  ctx.clearRect(0, 0, W, H);
+  const all = [...hist.o, ...hist.s, ...hist.r].filter(v => v !== null);
+  if (all.length < 2) return;
+  const mn = Math.min(...all) - 3, mx = Math.max(...all) + 3;
+  const yS = v => H - 22 - (v - mn) / (mx - mn) * (H - 38);
+  const xS = i => i / (N - 1) * (W - 16) + 8;
+  ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
+  [0,.25,.5,.75,1].forEach(f => {
+    const y = H - 22 - f * (H - 38);
+    ctx.beginPath(); ctx.moveTo(8, y); ctx.lineTo(W - 8, y); ctx.stroke();
+    ctx.fillStyle = '#8b949e'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText((mn + f*(mx-mn)).toFixed(0) + '°', 7, y + 3);
+  });
+  function dl(pts, col) {
+    const vp = pts.map((p,i) => ({p,i})).filter(x => x.p !== null);
+    if (vp.length < 2) return;
+    ctx.beginPath(); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+    vp.forEach(({p,i},j) => j===0 ? ctx.moveTo(xS(i),yS(p)) : ctx.lineTo(xS(i),yS(p)));
+    ctx.stroke();
+    const last = vp[vp.length-1];
+    ctx.beginPath(); ctx.arc(xS(last.i), yS(last.p), 3, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+  }
+  dl(hist.o, '#58a6ff'); dl(hist.s, '#e3b341'); dl(hist.r, '#56d4c8');
+  const leg = [['#58a6ff','Outdoor'],['#e3b341','Supply S1'],['#56d4c8','Room S1']];
+  let lx = 10;
+  leg.forEach(([c,l]) => {
+    ctx.fillStyle = c; ctx.fillRect(lx, H-12, 10, 7);
+    ctx.fillStyle = '#8b949e'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(l, lx+13, H-6); lx += ctx.measureText(l).width + 26;
+  });
+}
+
+/* ══════════════════════════════════════════
+   DEMO MODE
+══════════════════════════════════════════ */
+function loadDemo() {
+  demoMode = true;
+  document.getElementById('setup-panel').style.display = 'none';
+  document.getElementById('dashboard').style.display   = '';
+  setBadge('auth', '⬤ Demo mode');
+  buildTempGrid(); buildCanvas();
+  renderSystemInfo_demo();
+  tickDemo();
+  pollTimer = setInterval(tickDemo, 5000);
+}
+
+function tickDemo() {
+  _demoT += 0.07;
+  const sin = Math.sin, rand = () => Math.random()*.4-.2;
+  const make = (base,amp,phase) => +(base + amp*sin(_demoT*.08+phase) + rand()).toFixed(1);
+  const fakeParams = [
+    {parameterId:40004, parameterName:'BT1 Outdoor temp',        value:make(-5,4,0),    displayValue:make(-5,4,0)+'°C',   parameterUnit:'°C'},
+    {parameterId:40008, parameterName:'BT2 Supply temp S1',      value:make(36,5,1),    displayValue:make(36,5,1)+'°C',   parameterUnit:'°C'},
+    {parameterId:40012, parameterName:'BT3 Return temp S1',      value:make(31,4,1.5),  displayValue:make(31,4,1.5)+'°C', parameterUnit:'°C'},
+    {parameterId:40013, parameterName:'BT7 Hot water top',       value:make(56,2,.3),   displayValue:make(56,2,.3)+'°C',  parameterUnit:'°C'},
+    {parameterId:40014, parameterName:'BT6 Hot water load',      value:make(46,2,.4),   displayValue:make(46,2,.4)+'°C',  parameterUnit:'°C'},
+    {parameterId:40018, parameterName:'BT14 Hot gas temp',       value:make(72,6,2),    displayValue:make(72,6,2)+'°C',   parameterUnit:'°C'},
+    {parameterId:40023, parameterName:'BT18 Compressor temp',    value:make(56,3,1.2),  displayValue:make(56,3,1.2)+'°C', parameterUnit:'°C'},
+    {parameterId:40033, parameterName:'BT50 Room temp S1',       value:make(21.5,.5,.2),displayValue:make(21.5,.5,.2)+'°C',parameterUnit:'°C'},
+    {parameterId:43009, parameterName:'Calc supply temp S1',     value:make(36.5,5,1),  displayValue:make(36.5,5,1)+'°C', parameterUnit:'°C'},
+    {parameterId:43005, parameterName:'Degree minutes',          value:-185,            displayValue:'-185 DM',           parameterUnit:'DM'},
+    {parameterId:43086, parameterName:'Priority',                value:30,              displayValue:'Heating',           parameterUnit:''},
+    {parameterId:43427, parameterName:'Compressor state',        value:60,              displayValue:'Running',           parameterUnit:''},
+    {parameterId:45001, parameterName:'Alarm number',            value:0,               displayValue:'0',                 parameterUnit:''},
+    {parameterId:43084, parameterName:'Int el add power',        value:0,               displayValue:'0.00 kW',           parameterUnit:'kW'},
+    {parameterId:47041, parameterName:'Hot water mode',          value:1,               displayValue:'Normal',            parameterUnit:''},
+    {parameterId:47007, parameterName:'Heat curve S1',           value:9,               displayValue:'9',                 parameterUnit:''},
+    {parameterId:47011, parameterName:'Offset S1',               value:0,               displayValue:'0',                 parameterUnit:''},
+    {parameterId:47015, parameterName:'Min supply S1',           value:20,              displayValue:'20°C',              parameterUnit:'°C'},
+    {parameterId:47019, parameterName:'Max supply S1',           value:55,              displayValue:'55°C',              parameterUnit:'°C'},
+    {parameterId:47206, parameterName:'DM start heating',        value:-30,             displayValue:'-30 DM',            parameterUnit:'DM'},
+    {parameterId:47208, parameterName:'DM start add',            value:-700,            displayValue:'-700 DM',           parameterUnit:'DM'},
+  ];
+  allParams = fakeParams;
+  render(fakeParams);
+  document.getElementById('upd').textContent = 'Demo · ' + new Date().toLocaleTimeString();
+}
+
+function renderSystemInfo_demo() {
+  document.getElementById('sys-info').innerHTML = [
+    ['System ID',   'demo-system-001'],
+    ['System name', 'My Home — Demo'],
+    ['Country',     'FI'],
+  ].map(([l,v]) => `<div class="info-card"><div class="info-label">${l}</div><div class="info-val">${v}</div></div>`).join('');
+  document.getElementById('dev-info').innerHTML = [
+    ['Device ID',    'demo-device-001'],
+    ['Product name', 'NIBE F470'],
+    ['Serial number','DEMO12345678'],
+    ['Firmware',     '1.00.00'],
+    ['Connection',   'Connected'],
+  ].map(([l,v]) => `<div class="info-card"><div class="info-label">${l}</div><div class="info-val">${v}</div></div>`).join('');
+}
+
+/* ══════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════ */
+function fmt(v, d=1) { if (v===null||v===undefined) return '—'; return Number(v).toFixed(d); }
+
+function setBadge(state, text) {
+  const el = document.getElementById('badge');
+  el.textContent = text;
+  el.className = state === 'ok' ? 'ok' : state === 'err' ? 'err' : state === 'auth' ? 'auth' : '';
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['overview','all-params','system'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-'+name));
+}
+</script>
+</body>
+</html>
