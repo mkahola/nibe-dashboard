@@ -187,7 +187,6 @@ footer a{color:var(--bl);text-decoration:none}
     <div class="sec">Operating status</div>
     <div class="sg">
       <div class="sc tl"><div class="sl">Compressor</div><div class="sv" id="s-comp">—</div><div class="su" id="s-prio">—</div></div>
-      <div class="sc bl"><div class="sl">Degree minutes</div><div class="sv" id="s-dm">—</div><div class="su">DM</div></div>
       <div class="sc am"><div class="sl">El. addition</div><div class="sv" id="s-el">—</div><div class="su">kW</div></div>
       <div class="sc pu"><div class="sl">Hot water mode</div><div class="sv" id="s-hw" style="font-size:15px;padding-top:4px">—</div><div class="su">&nbsp;</div></div>
       <div class="sc cy"><div class="sl">Power consumption</div><div class="sv" id="s-pw">—</div><div class="su" id="s-pw-sub">kW</div></div>
@@ -523,7 +522,6 @@ function render(params) {
   const cls = /run|start|on|active|heat|hot/.test(ct) && !/stop|off/.test(ct) ? 'running' : 'stopped';
   document.getElementById('s-comp').innerHTML = comp ? `<span class="pill ${cls}">${esc(txt(comp))}</span>` : '—';
   document.getElementById('s-prio').textContent = txt(findP([43086, 49994], /priority|operating mode/i));
-  document.getElementById('s-dm').textContent = txt(findP([43005], /degree minutes/i));
   document.getElementById('s-el').textContent = txt(findP([43084], /add(ition)?.*(power|kw)|el\.? add/i));
   document.getElementById('s-hw').textContent = txt(findP([47041], /hot water.*(mode|demand)|comfort/i));
 
