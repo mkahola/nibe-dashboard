@@ -269,6 +269,21 @@ let refreshToken = localStorage.getItem('nibe_refresh_token') || '';
 let tokenExpiry  = +localStorage.getItem('nibe_token_expiry') || 0;
 let clientId     = localStorage.getItem('nibe_client_id')     || '';
 let clientSecret = localStorage.getItem('nibe_client_secret') || '';
+
+// Kiosk launch: credentials may be passed as  index.html#client_id=...&client_secret=...
+// They are saved locally and removed from the URL (fragments are never sent to a server).
+let kioskCreds = false;
+try {
+  const h = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  if (h.get('client_id') && h.get('client_secret')) {
+    clientId     = h.get('client_id').trim();
+    clientSecret = h.get('client_secret').trim();
+    localStorage.setItem('nibe_client_id',     clientId);
+    localStorage.setItem('nibe_client_secret', clientSecret);
+    kioskCreds = true;
+  }
+  if (window.location.hash) history.replaceState({}, '', window.location.pathname + window.location.search);
+} catch (e) {}
 let currentDeviceId = localStorage.getItem('nibe_device_id') || '';
 let allParams    = [];
 let pollTimer    = null;
@@ -296,9 +311,15 @@ if (urlParams.has('code')) {
 } else if (accessToken && Date.now() < tokenExpiry - 5000) {
   startDashboard();
 } else if (refreshToken) {
-  doRefresh().then(ok => ok ? startDashboard() : showSetup()).catch(() => showSetup());
+  doRefresh().then(ok => ok ? startDashboard() : noSession()).catch(() => noSession());
 } else {
+  noSession();
+}
+
+// No usable token: in kiosk mode (credentials supplied by the launcher) start sign-in automatically.
+function noSession() {
   showSetup();
+  if (kioskCreds) startAuth(true);
 }
 
 /* ══════════════════════════════════════════
@@ -316,9 +337,9 @@ function showAuthPanel() {
   document.getElementById('dashboard').style.display   = 'none';
 }
 
-function startAuth() {
-  clientId     = document.getElementById('client-id').value.trim();
-  clientSecret = document.getElementById('client-secret').value.trim();
+function startAuth(sameTab) {
+  clientId     = document.getElementById('client-id').value.trim()     || clientId;
+  clientSecret = document.getElementById('client-secret').value.trim() || clientSecret;
   if (!clientId || !clientSecret) { alert('Please enter both Client ID and Client Secret.'); return; }
   localStorage.setItem('nibe_client_id',     clientId);
   localStorage.setItem('nibe_client_secret', clientSecret);
@@ -331,7 +352,8 @@ function startAuth() {
   const authFullUrl = AUTH_URL + '?' + params.toString();
   document.getElementById('auth-url-box').textContent = authFullUrl;
   showAuthPanel();
-  window.open(authFullUrl, '_blank');
+  if (sameTab === true) window.location.href = authFullUrl;
+  else window.open(authFullUrl, '_blank');
 }
 
 async function exchangeCode() {
