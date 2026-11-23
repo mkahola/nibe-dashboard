@@ -3,129 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nibe F470 — myUplink Dashboard</title>
+<title>Nibe F470</title>
 <style>
-:root {
-  --bg:    #0d1117; --bg2: #161b22; --bg3: #21262d;
-  --br:    #30363d; --tx:  #e6edf3; --tx2: #8b949e;
-  --bl:    #58a6ff; --tl:  #39d353; --am:  #d29922;
-  --rd:    #f85149; --or:  #e3b341; --pu:  #a371f7; --cy: #56d4c8;
-  --r: 10px; --font: 'Segoe UI', system-ui, sans-serif;
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--br:#30363d;--tx:#e6edf3;--tx2:#8b949e;
+  --bl:#58a6ff;--tl:#39d353;--am:#d29922;--rd:#f85149;--or:#e3b341;--pu:#a371f7;--cy:#56d4c8;
+  --r:12px;--font:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px;min-height:100vh}
+html,body{background:var(--bg)}
+body{color:var(--tx);font-family:var(--font);font-size:14px;min-height:100vh}
+body.dash-on{height:100vh;overflow:hidden;cursor:none;user-select:none;-webkit-user-select:none}
 
-/* ── Header ── */
-header{background:var(--bg2);border-bottom:1px solid var(--br);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
-.brand{display:flex;align-items:center;gap:11px}
-.brand-icon{width:32px;height:32px;background:linear-gradient(135deg,#1f6feb,#388bfd);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px}
-.brand-title{font-size:15px;font-weight:600;letter-spacing:-.3px}
-.brand-sub{font-size:11px;color:var(--tx2)}
-.hdr-right{display:flex;align-items:center;gap:14px}
-#badge{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:600;background:#0c2038;color:var(--bl);border:1px solid #1f3a54}
+/* header */
+header{height:40px;background:var(--bg2);border-bottom:1px solid var(--br);padding:0 16px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:16px;font-weight:600;letter-spacing:-.2px}
+.hdr-right{display:flex;align-items:center;gap:12px}
+#upd{font-size:13px;color:var(--tx2);font-variant-numeric:tabular-nums}
+#badge{padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;background:#0c2038;color:var(--bl);border:1px solid #1f3a54}
 #badge.ok{background:#0d2d1a;color:var(--tl);border-color:#1a4d2a}
 #badge.err{background:#2d0d0d;color:var(--rd);border-color:#4d1a1a}
 #badge.auth{background:#2d220a;color:var(--am);border-color:#4d3a0a}
-#upd{font-size:11px;color:var(--tx2)}
 
-/* ── Setup panel ── */
-#setup-panel{max-width:560px;margin:48px auto;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:28px 28px 24px}
-#setup-panel h2{font-size:17px;font-weight:600;margin-bottom:6px}
-#setup-panel p{font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:18px}
-.form-row{margin-bottom:14px}
-.form-row label{display:block;font-size:12px;color:var(--tx2);margin-bottom:5px;font-weight:500}
-.form-row input{width:100%;background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:8px 11px;color:var(--tx);font-size:13px;outline:none;transition:border-color .15s}
+/* sign-in screens (only used the first time) */
+#setup-panel,#auth-panel{max-width:560px;margin:18px auto;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:18px 20px}
+#setup-panel h2,#auth-panel h2{font-size:17px;font-weight:600;margin-bottom:6px}
+#setup-panel p,#auth-panel p{font-size:13px;color:var(--tx2);line-height:1.5;margin-bottom:12px}
+.form-row{margin-bottom:10px}
+.form-row label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:500}
+.form-row input{width:100%;background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:8px 11px;color:var(--tx);font-size:14px;outline:none}
 .form-row input:focus{border-color:var(--bl)}
-.form-row small{font-size:11px;color:var(--tx2);margin-top:4px;display:block}
-.btn{background:var(--bl);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
-.btn:hover{opacity:.85}
+.btn{background:var(--bl);color:#fff;border:none;border-radius:6px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer}
 .btn.secondary{background:transparent;color:var(--tx2);border:1px solid var(--br);margin-left:10px}
-.btn.secondary:hover{background:var(--bg3)}
-.steps{background:var(--bg3);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:var(--tx2);line-height:1.8}
-.steps strong{color:var(--tx)}
-.steps a{color:var(--bl);text-decoration:none}
-.setup-note{font-size:11px;color:var(--tx2);margin-top:14px;padding-top:14px;border-top:1px solid var(--br)}
+.steps{background:var(--bg3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--tx2);line-height:1.7}
+.steps strong{color:var(--tx)} .steps a{color:var(--bl);text-decoration:none}
+.setup-note{font-size:11px;color:var(--tx2);margin-top:12px;padding-top:10px;border-top:1px solid var(--br)}
+#auth-url-box{background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:8px 10px;font-size:11px;word-break:break-all;color:var(--bl);margin-bottom:10px}
+@media (max-height:560px){.steps{display:none}}
 
-/* ── Auth callback panel ── */
-#auth-panel{max-width:480px;margin:60px auto;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:26px}
-#auth-panel h2{font-size:16px;font-weight:600;margin-bottom:8px}
-#auth-panel p{font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:14px}
-#auth-url-box{background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:10px 12px;font-size:12px;word-break:break-all;color:var(--bl);margin-bottom:14px;user-select:all}
-.form-row.code input{font-family:monospace}
-
-/* ── Main dashboard ── */
-#dashboard{display:none;max-width:1200px;margin:0 auto;padding:22px 18px}
-.sec{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.8px;margin:24px 0 10px}
-.alarm{display:none;background:#2d1a0a;border:1px solid #6e3a0f;color:var(--or);padding:9px 14px;border-radius:var(--r);margin-bottom:16px;font-size:12px;font-weight:500}
-.alarm.on{display:flex;align-items:center;gap:8px}
-
-/* Status cards */
-.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
-.sc{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:13px 15px}
-.sl{font-size:11px;color:var(--tx2);margin-bottom:5px}
-.sv{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
-.su{font-size:11px;color:var(--tx2);margin-top:3px}
-.sc.bl .sv{color:var(--bl)}.sc.tl .sv{color:var(--tl)}.sc.am .sv{color:var(--am)}.sc.pu .sv{color:var(--pu)}.sc.cy .sv{color:var(--cy)}
-.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+/* dashboard: fills the screen, never scrolls (target: 800x480) */
+#dashboard{display:none;flex-direction:column;gap:1.4vh;height:calc(100vh - 40px);padding:1.6vh 14px 1.8vh}
+.alarm,#errbar{display:none;border-radius:10px;padding:.8vh 12px;font-size:clamp(12px,2.6vh,15px);font-weight:500;line-height:1.3}
+.alarm{background:#2d1a0a;border:1px solid #6e3a0f;color:var(--or)}
+.alarm.on{display:block}
+#errbar{background:#2d0d0d;border:1px solid #4d1a1a;color:var(--rd);max-height:14vh;overflow:hidden;word-break:break-word}
+.blk{flex:1;min-height:0;display:flex;flex-direction:column;gap:.9vh}
+.sec{font-size:clamp(11px,2.5vh,14px);font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.9px}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.tile{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:1.2vh 12px;display:flex;flex-direction:column;justify-content:center;min-width:0;overflow:hidden;border-top:3px solid var(--c)}
+.tile .l{font-size:clamp(11px,2.8vh,16px);color:var(--tx2);margin-bottom:.6vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .v{font-size:min(9.5vh,6.8vw);font-weight:700;line-height:1.05;color:var(--c);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tile .v.t{font-size:min(5.6vh,4.2vw)}
+.tile .u{font-size:.5em;font-weight:600;color:var(--tx2);margin-left:.18em}
+.tile .s{font-size:clamp(11px,2.6vh,15px);color:var(--tx2);margin-top:.6vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.2em}
+.tl{--c:var(--tl)}.am{--c:var(--am)}.pu{--c:var(--pu)}.cy{--c:var(--cy)}.bl{--c:var(--bl)}.or{--c:var(--or)}.gn{--c:#7ee787}
+.pill{display:inline-block;padding:.1em .5em;border-radius:999px;font-size:inherit}
 .running{background:#0d2d1a;color:var(--tl)}.stopped{background:#1a1a1a;color:var(--tx2)}
-.starting{background:#2d2200;color:var(--am)}.stopping{background:#2d1a0a;color:var(--or)}
 
-/* Temperature grid */
-.tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px}
-.tc{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px}
-.ti{width:33px;height:33px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
-.tn{font-size:11px;color:var(--tx2);margin-bottom:2px}
-.tv{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
-
-/* All parameters table */
-#params-table-wrap{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);overflow:hidden;margin-bottom:8px}
-.pt{width:100%;border-collapse:collapse}
-.pt th{text-align:left;padding:9px 14px;font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--br);background:var(--bg3)}
-.pt td{padding:8px 14px;border-bottom:1px solid var(--br);font-size:12px}
-.pt tr:last-child td{border-bottom:none}
-.pt tr:hover td{background:#1a1f26}
-.vc{font-weight:600;color:var(--bl);font-variant-numeric:tabular-nums}
-.uc{color:var(--tx2);font-size:11px}
-.pt-id{color:var(--tx2);font-family:monospace;font-size:11px}
-.search-wrap{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--br)}
-.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:7px 11px;color:var(--tx);font-size:13px;outline:none}
-.search-wrap input:focus{border-color:var(--bl)}
-
-/* Chart */
-.chart-box{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:14px}
-canvas#ch{width:100%;display:block}
-
-/* Device selector */
-.dev-select{background:var(--bg3);border:1px solid var(--br);border-radius:6px;padding:6px 10px;color:var(--tx);font-size:13px;outline:none;cursor:pointer}
-
-/* Tabs */
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--br);margin-bottom:16px}
-.tab{padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--tx2);transition:color .15s}
-.tab.active{color:var(--bl);border-bottom-color:var(--bl)}
-.tab-panel{display:none}.tab-panel.active{display:block}
-
-
-footer{text-align:center;padding:28px 0 18px;color:var(--tx2);font-size:11px}
-footer a{color:var(--bl);text-decoration:none}
-
-@media(max-width:600px){.sg{grid-template-columns:repeat(2,1fr)}.tg{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tile .v{font-size:min(9.5vh,11vw)}.tile .v.t{font-size:min(5.6vh,6vw)}}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="brand">
-    <div class="brand-icon">🌡</div>
-    <div>
-      <div class="brand-title">Nibe F470 — myUplink</div>
-      <div class="brand-sub">Cloud API v2 Dashboard</div>
-    </div>
-  </div>
-  <div class="hdr-right">
-    <span id="upd"></span>
-    <span id="badge">⬤ Not connected</span>
-    <select class="dev-select" id="device-sel" style="display:none" onchange="onDeviceChange()"></select>
-  </div>
+  <div class="brand">Nibe F470</div>
+  <div class="hdr-right"><span id="upd"></span><span id="badge">Not connected</span></div>
 </header>
 
 <!-- ════════════════ SETUP PANEL ════════════════ -->
@@ -174,52 +116,29 @@ footer a{color:var(--bl);text-decoration:none}
 
 <!-- ════════════════ DASHBOARD ════════════════ -->
 <div id="dashboard">
-  <div id="errbar" style="display:none;background:#2d0d0d;border:1px solid #4d1a1a;color:#f85149;padding:10px 14px;border-radius:10px;margin-bottom:16px;font-size:12px;line-height:1.5;word-break:break-word"></div>
+  <div id="errbar"></div>
   <div class="alarm" id="alarm">⚠ Active alarm — code <span id="alcode">—</span></div>
 
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('overview')">Overview</div>
-    <div class="tab" onclick="switchTab('all-params')">All parameters</div>
-  </div>
-
-  <!-- Overview tab -->
-  <div class="tab-panel active" id="tab-overview">
+  <section class="blk">
     <div class="sec">Operating status</div>
-    <div class="sg">
-      <div class="sc tl"><div class="sl">Compressor</div><div class="sv" id="s-comp">—</div><div class="su" id="s-prio">—</div></div>
-      <div class="sc am"><div class="sl">El. addition</div><div class="sv" id="s-el">—</div><div class="su">kW</div></div>
-      <div class="sc pu"><div class="sl">Hot water mode</div><div class="sv" id="s-hw" style="font-size:15px;padding-top:4px">—</div><div class="su">&nbsp;</div></div>
-      <div class="sc cy"><div class="sl">Power consumption</div><div class="sv" id="s-pw">—</div><div class="su" id="s-pw-sub">kW</div></div>
+    <div class="grid">
+      <div class="tile tl"><div class="l">Compressor</div><div class="v t" id="s-comp">—</div><div class="s" id="s-prio">&nbsp;</div></div>
+      <div class="tile am"><div class="l">El. addition</div><div class="v" id="s-el">—</div><div class="s">&nbsp;</div></div>
+      <div class="tile pu"><div class="l">Hot water mode</div><div class="v t" id="s-hw">—</div><div class="s">&nbsp;</div></div>
+      <div class="tile cy"><div class="l">Power consumption</div><div class="v" id="s-pw">—</div><div class="s" id="s-pw-sub">&nbsp;</div></div>
     </div>
+  </section>
 
+  <section class="blk">
     <div class="sec">Temperatures</div>
-    <div class="tg" id="tgrid"></div>
-
-    <div class="sec">Temperature history (last 40 readings)</div>
-    <div class="chart-box"><canvas id="ch" height="180"></canvas></div>
-  </div>
-
-  <!-- All parameters tab -->
-  <div class="tab-panel" id="tab-all-params">
-    <div id="params-table-wrap">
-      <div class="search-wrap">
-        <input type="text" id="param-search" placeholder="Filter parameters by name, ID, or value…" oninput="filterParams()">
-      </div>
-      <table class="pt">
-        <thead><tr><th>ID</th><th>Parameter name</th><th>Value</th><th>Unit</th></tr></thead>
-        <tbody id="param-tbody"><tr><td colspan="4" style="padding:20px 14px;color:var(--tx2)">Loading parameters…</td></tr></tbody>
-      </table>
+    <div class="grid">
+      <div class="tile bl"><div class="l">Outdoor temperature</div><div class="v" id="t-out">—</div></div>
+      <div class="tile or"><div class="l">Supply line</div><div class="v" id="t-sup">—</div></div>
+      <div class="tile gn"><div class="l">Return line</div><div class="v" id="t-ret">—</div></div>
+      <div class="tile am"><div class="l">Hot water top</div><div class="v" id="t-hwt">—</div></div>
     </div>
-    <div id="param-count" style="font-size:11px;color:var(--tx2);padding:4px 2px"></div>
-  </div>
-
+  </section>
 </div>
-
-<footer>
-  Nibe F470 myUplink Dashboard &bull;
-  API: <a href="https://api.myuplink.com/swagger/index.html" target="_blank">api.myuplink.com</a> &bull;
-  Register app: <a href="https://dev.myuplink.com/apps" target="_blank">dev.myuplink.com</a>
-</footer>
 
 <script>
 /* ══════════════════════════════════════════
@@ -231,35 +150,6 @@ const TOKEN_URL    = 'https://api.myuplink.com/oauth/token';
 const REDIRECT_URI = new URL('callback.html', window.location.href).href;
 const SCOPE        = 'READSYSTEM offline_access';
 const POLL_MS      = 60000; // myUplink recommends 60s polling
-
-// Well-known F470 parameter IDs → nice display names + category
-const KNOWN = {
-  40004: {label:'Outdoor temp',        cat:'temp',   icon:'🌤', col:'#58a6ff', bg:'#0c2038'},
-  40008: {label:'Supply temp S1',      cat:'temp',   icon:'↑',  col:'#e3b341', bg:'#2d1a0a'},
-  40012: {label:'Return temp S1',      cat:'temp',   icon:'↓',  col:'#39d353', bg:'#0d2d1a'},
-  40013: {label:'HW top',             cat:'temp',   icon:'💧', col:'#d29922', bg:'#2d220a'},
-  40014: {label:'HW load',            cat:'temp',   icon:'💧', col:'#d29922', bg:'#2d200a'},
-  40018: {label:'Hot gas temp',       cat:'temp',   icon:'🔥', col:'#f85149', bg:'#2d0d0d'},
-  40023: {label:'Compressor temp',    cat:'temp',   icon:'⚙',  col:'#a371f7', bg:'#200d2d'},
-  40033: {label:'Room temp S1',       cat:'temp',   icon:'🏠', col:'#56d4c8', bg:'#0d2d28'},
-  43009: {label:'Calc. supply S1',    cat:'temp',   icon:'≈',  col:'#85c155', bg:'#1a2d0a'},
-  43005: {label:'Degree minutes',     cat:'status'},
-  43086: {label:'Priority',           cat:'status'},
-  43427: {label:'Compressor state',   cat:'status'},
-  45001: {label:'Alarm number',       cat:'status'},
-  43084: {label:'El. addition power', cat:'status'},
-  47041: {label:'Hot water mode',     cat:'setting'},
-  47007: {label:'Heat curve S1',      cat:'setting'},
-  47011: {label:'Curve offset S1',    cat:'setting'},
-  47015: {label:'Min supply S1',      cat:'setting'},
-  47019: {label:'Max supply S1',      cat:'setting'},
-  47206: {label:'DM start heating',   cat:'setting'},
-  47208: {label:'DM start el.add',    cat:'setting'},
-};
-const COMP_STATE = {20:'stopped', 40:'starting', 60:'running', 100:'stopping'};
-const COMP_LABEL = {20:'Stopped', 40:'Starting', 60:'Running', 100:'Stopping'};
-const PRIO_LABEL = {10:'Off', 20:'Hot water', 30:'Heating', 40:'Pool', 60:'Cooling'};
-const HW_LABEL   = {0:'Economy', 1:'Normal', 2:'Luxury'};
 
 /* ══════════════════════════════════════════
    STATE
@@ -289,8 +179,6 @@ let allParams    = [];
 let pollTimer    = null;
 let systems      = [];
 let devices      = [];
-const N = 40;
-let hist = {o:Array(N).fill(null), s:Array(N).fill(null), r:Array(N).fill(null)};
 let demoMode     = false;
 let _demoT       = 0;
 
@@ -326,12 +214,14 @@ function noSession() {
    AUTH FLOW
 ══════════════════════════════════════════ */
 function showSetup() {
+  document.body.classList.remove('dash-on');
   document.getElementById('setup-panel').style.display = '';
   document.getElementById('auth-panel').style.display  = 'none';
   document.getElementById('dashboard').style.display   = 'none';
   setBadge('not', '⬤ Not connected');
 }
 function showAuthPanel() {
+  document.body.classList.remove('dash-on');
   document.getElementById('setup-panel').style.display = 'none';
   document.getElementById('auth-panel').style.display  = '';
   document.getElementById('dashboard').style.display   = 'none';
@@ -453,63 +343,47 @@ async function loadSystemStatus(systemId) {
 /* ══════════════════════════════════════════
    DASHBOARD BOOT
 ══════════════════════════════════════════ */
-async function startDashboard() {
+function showDashboard() {
   document.getElementById('setup-panel').style.display = 'none';
   document.getElementById('auth-panel').style.display  = 'none';
-  document.getElementById('dashboard').style.display   = 'block';
-  setBadge('auth', '⬤ Loading…');
-  buildTempGrid();
-  buildCanvas();
+  document.getElementById('dashboard').style.display   = 'flex';
+  document.body.classList.add('dash-on');
+}
 
+async function startDashboard() {
+  showDashboard();
+  setBadge('auth', 'Loading…');
   try {
     const sysList = await loadSystems();
     if (!sysList.length) throw new Error('No systems found in your myUplink account.');
-
-    // Populate device selector
     devices = [];
-    for (const sys of sysList) {
-      for (const dev of (sys.devices || [])) {
-        devices.push({ ...dev, systemId: sys.systemId, systemName: sys.name });
-      }
-    }
-    const sel = document.getElementById('device-sel');
-    sel.innerHTML = devices.map(d =>
-      `<option value="${d.id}" ${d.id === currentDeviceId ? 'selected' : ''}>${d.product?.name || d.id}</option>`
-    ).join('');
-    sel.style.display = devices.length > 1 ? '' : 'none';
-    if (!currentDeviceId && devices.length) currentDeviceId = devices[0].id;
+    for (const sys of sysList) for (const dev of (sys.devices || [])) devices.push({ ...dev, systemId: sys.systemId });
+    if (!devices.length) throw new Error('No devices found in your myUplink account.');
+    if (!devices.some(d => d.id === currentDeviceId)) currentDeviceId = devices[0].id;
     localStorage.setItem('nibe_device_id', currentDeviceId);
-
     await pollData();
+    clearInterval(pollTimer);
     pollTimer = setInterval(pollData, POLL_MS);
-    setBadge('ok', '⬤ Live');
-  } catch(e) {
-    setBadge('err', '⬤ Error');
+  } catch (e) {
+    setBadge('err', 'Error');
     showError(e.message);
   }
-}
-
-function onDeviceChange() {
-  currentDeviceId = document.getElementById('device-sel').value;
-  localStorage.setItem('nibe_device_id', currentDeviceId);
-  clearInterval(pollTimer);
-  pollData().then(() => { pollTimer = setInterval(pollData, POLL_MS); });
 }
 
 async function pollData() {
   try {
     const points = await loadDevicePoints(currentDeviceId);
     allParams = Array.isArray(points) ? points : (points.parameterGroups
-      ? points.parameterGroups.flatMap(g => g.parameters || [])
-      : []);
+      ? points.parameterGroups.flatMap(g => g.parameters || []) : []);
     if (!allParams.length) throw new Error('The API returned no data points for this device. Check that it is online at myuplink.com.');
     showError('');
     render(allParams);
-    setBadge('ok', '⬤ Live');
-    document.getElementById('upd').textContent = 'Updated ' + new Date().toLocaleTimeString();
-  } catch(e) {
-    setBadge('err', '⬤ Error');
+    setBadge('ok', 'Live');
+    document.getElementById('upd').textContent = new Date().toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    setBadge('err', 'Error');
     showError(e.message);
+    if (/\b401\b/.test(e.message)) doRefresh();   // expired token: renew, next poll recovers
   }
 }
 
@@ -517,12 +391,8 @@ async function pollData() {
    RENDER
 ══════════════════════════════════════════ */
 function paramVal(id) {
-  const p = allParams.find(p => +p.parameterId === +id || p.parameterName === String(id));
-  return p ? p : null;
+  return allParams.find(p => +p.parameterId === +id) || null;
 }
-function raw(id) { const p = paramVal(id); return p ? p.value : null; }
-function disp(id) { return txt(paramVal(id)); }
-
 // myUplink returns the human-readable value in `strVal` (e.g. "-3.5°C", "Heating")
 function txt(p) {
   if (!p) return '—';
@@ -531,166 +401,66 @@ function txt(p) {
   return p.value === undefined || p.value === null ? '—' : String(p.value);
 }
 // Find a point by known ID(s) first, then by name pattern (IDs differ between models)
-function findP(ids, re) {
+function findP(ids, re, unit) {
   for (const id of ids) { const p = paramVal(id); if (p) return p; }
-  return re ? (allParams.find(p => re.test(p.parameterName || '')) || null) : null;
+  return re ? (allParams.find(p => re.test(p.parameterName || '') && (!unit || p.parameterUnit === unit)) || null) : null;
 }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+// number + unit, e.g. "3.45 kW" (unit is a smaller span next to the value)
+function withUnit(num, digits, unit) {
+  return Number(num).toFixed(digits) + '<span class="u">' + unit + '</span>';
+}
+function pointValue(p, digits, unit) {
+  if (!p) return '—';
+  return typeof p.value === 'number' ? withUnit(p.value, digits, unit) : esc(txt(p));
+}
+
+const TEMPS = [
+  { el: 't-out', ids: [40004], re: /outdoor/i },
+  { el: 't-sup', ids: [40008], re: /^(?!.*(calc|target|set\b)).*\b(supply|flow)\b/i },
+  { el: 't-ret', ids: [40012], re: /\breturn\b/i },
+  { el: 't-hwt', ids: [40013], re: /hot ?water.*top|\bhw\b.*top|top.*hot ?water/i },
+];
+const PHASE_V = 230;   // Finnish mains voltage per phase
+
 function render(params) {
-  // Status cards (looked up by ID, falling back to name)
+  // ── Operating status ──
   const comp = findP([43427, 44061], /compressor/i);
   const ct = txt(comp).toLowerCase();
-  const cls = /run|start|on|active|heat|hot/.test(ct) && !/stop|off/.test(ct) ? 'running' : 'stopped';
-  document.getElementById('s-comp').innerHTML = comp ? `<span class="pill ${cls}">${esc(txt(comp))}</span>` : '—';
-  document.getElementById('s-prio').textContent = txt(findP([43086, 49994], /priority|operating mode/i));
-  document.getElementById('s-el').textContent = txt(findP([43084], /add(ition)?.*(power|kw)|el\.? add/i));
+  const running = /run|start|on|active|heat|hot/.test(ct) && !/stop|off/.test(ct);
+  document.getElementById('s-comp').innerHTML = comp ? `<span class="pill ${running ? 'running' : 'stopped'}">${esc(txt(comp))}</span>` : '—';
+  const prio = findP([43086, 49994], /priority|operating mode/i);
+  document.getElementById('s-prio').textContent = prio ? txt(prio) : '';
+  document.getElementById('s-el').innerHTML = pointValue(findP([43084], /add(ition)?.*(power|kw)|el\.? add/i), 2, 'kW');
   document.getElementById('s-hw').textContent = txt(findP([47041], /hot water.*(mode|demand)|comfort/i));
 
   // Power consumption (kW) = (BE1 + BE2 + BE3 phase currents) x 230 V
-  const PHASE_V = 230;
   const phaseA = (name, id) => {
-    const p = paramVal(id) || allParams.find(q => new RegExp('\\b' + name + '\\b', 'i').test(q.parameterName || '') && (q.parameterUnit || '') === 'A');
+    const p = paramVal(id) || params.find(q => new RegExp('\\b' + name + '\\b', 'i').test(q.parameterName || '') && (q.parameterUnit || '') === 'A');
     return p && typeof p.value === 'number' ? p.value : null;
   };
-  const amps = ['BE1', 'BE2', 'BE3'].map((n, i) => ({ n, a: phaseA(n, [40079, 40081, 40083][i]) }));
-  const found = amps.filter(x => x.a !== null);
-  const pwEl = document.getElementById('s-pw'), pwSub = document.getElementById('s-pw-sub');
+  const amps = ['BE1', 'BE2', 'BE3'].map((n, i) => phaseA(n, [40079, 40081, 40083][i]));
+  const found = amps.filter(a => a !== null);
+  const pw = document.getElementById('s-pw'), pwSub = document.getElementById('s-pw-sub');
   if (found.length) {
-    const sumA = found.reduce((s, x) => s + x.a, 0);
-    pwEl.textContent = (sumA * PHASE_V / 1000).toFixed(2);
-    pwSub.textContent = 'kW · ' + sumA.toFixed(1) + ' A × ' + PHASE_V + ' V';
-    pwSub.title = amps.map(x => x.n + ': ' + (x.a === null ? 'n/a' : x.a.toFixed(1) + ' A')).join(', ');
+    const sumA = found.reduce((s, a) => s + a, 0);
+    pw.innerHTML = withUnit(sumA * PHASE_V / 1000, 2, 'kW');
+    pwSub.textContent = amps.map(a => a === null ? '–' : a.toFixed(1)).join(' / ') + ' A';
   } else {
-    pwEl.textContent = '—';
-    pwSub.textContent = 'kW · BE1–BE3 current not reported';
-    pwSub.title = '';
+    pw.textContent = '—';
+    pwSub.textContent = 'BE1–BE3 not reported';
   }
 
-  // Alarm
+  // ── Alarm ──
   const alarmP = findP([45001], /^alarm/i);
   const alarmEl = document.getElementById('alarm');
   if (alarmP && alarmP.value) { alarmEl.classList.add('on'); document.getElementById('alcode').textContent = txt(alarmP); }
   else alarmEl.classList.remove('on');
 
-  // Temperature cards: built from whatever °C sensors this pump actually reports
-  const order = Object.keys(KNOWN).map(Number);
-  const sensors = params.filter(p => p.parameterUnit === '°C' && !p.writable)
-    .sort((a, b) => {
-      const ia = order.indexOf(+a.parameterId), ib = order.indexOf(+b.parameterId);
-      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
-    }).slice(0, 15);
-  const tg = document.getElementById('tgrid');
-  tg.innerHTML = sensors.length ? sensors.map(p => {
-    const k = KNOWN[+p.parameterId] || {icon:'🌡', col:'#58a6ff', bg:'#0c2038'};
-    return `<div class="tc"><div class="ti" style="background:${k.bg};color:${k.col}">${k.icon}</div>
-      <div><div class="tn">${esc(p.parameterName || p.parameterId)}</div>
-      <div class="tv" style="color:${k.col}">${esc(txt(p))}</div></div></div>`;
-  }).join('') : '<div style="color:var(--tx2);font-size:13px">No temperature sensors reported. See the All parameters tab.</div>';
-
-  // History (outdoor / supply / room, matched by ID or name)
-  const num = p => (p && typeof p.value === 'number') ? p.value : null;
-  hist.o.push(num(findP([40004], /outdoor/i))); hist.o.shift();
-  hist.s.push(num(findP([40008], /supply|flow/i))); hist.s.shift();
-  hist.r.push(num(findP([40033], /room/i))); hist.r.shift();
-  drawChart();
-
-  // All params table
-  renderParamTable(params);
-}
-
-function renderParamTable(params) {
-  const q = (document.getElementById('param-search').value || '').toLowerCase();
-  const filtered = params.filter(p => {
-    if (!q) return true;
-    const name = (p.parameterName || '').toLowerCase();
-    const id   = String(p.parameterId || '');
-    const val  = txt(p).toLowerCase();
-    return name.includes(q) || id.includes(q) || val.includes(q);
-  });
-  document.getElementById('param-count').textContent = `${filtered.length} of ${params.length} parameters`;
-  document.getElementById('param-tbody').innerHTML = filtered.map(p => {
-    const name  = p.parameterName || (KNOWN[+p.parameterId] || {}).label || '—';
-    const val   = txt(p);
-    const unit  = p.parameterUnit || '';
-    return `<tr>
-      <td class="pt-id">${esc(p.parameterId || '—')}</td>
-      <td>${esc(name)}</td>
-      <td class="vc">${esc(val)}</td>
-      <td class="uc">${esc(unit)}</td>
-    </tr>`;
-  }).join('') || `<tr><td colspan="4" style="padding:16px 14px;color:var(--tx2)">No parameters match your filter.</td></tr>`;
-}
-
-function filterParams() { renderParamTable(allParams); }
-
-/* ══════════════════════════════════════════
-   TEMPERATURE GRID BUILD
-══════════════════════════════════════════ */
-function buildTempGrid() {
-  const ids = [40004,40033,40008,40012,43009,40013,40014,40023,40018];
-  const grid = document.getElementById('tgrid');
-  grid.innerHTML = '';
-  ids.forEach(id => {
-    const k = KNOWN[id] || {label:'Sensor '+id, icon:'🌡', col:'#8b949e', bg:'#1a1a1a'};
-    const d = document.createElement('div');
-    d.className = 'tc';
-    d.innerHTML = `<div class="ti" style="background:${k.bg||'#1a1a1a'};color:${k.col||'#8b949e'}">${k.icon||'🌡'}</div>
-      <div><div class="tn">${k.label}</div><div class="tv" id="t-${id}" style="color:${k.col||'#8b949e'}">—</div></div>`;
-    grid.appendChild(d);
-  });
-}
-
-/* ══════════════════════════════════════════
-   CANVAS CHART
-══════════════════════════════════════════ */
-function buildCanvas() {
-  const canvas = document.getElementById('ch');
-  function resz() {
-    canvas.width  = canvas.offsetWidth  * devicePixelRatio;
-    canvas.height = canvas.offsetHeight * devicePixelRatio;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    drawChart();
-  }
-  window.addEventListener('resize', resz);
-  resz();
-}
-
-function drawChart() {
-  const canvas = document.getElementById('ch');
-  const ctx    = canvas.getContext('2d');
-  const W = canvas.offsetWidth, H = canvas.offsetHeight;
-  ctx.clearRect(0, 0, W, H);
-  const all = [...hist.o, ...hist.s, ...hist.r].filter(v => v !== null);
-  if (all.length < 2) return;
-  const mn = Math.min(...all) - 3, mx = Math.max(...all) + 3;
-  const yS = v => H - 22 - (v - mn) / (mx - mn) * (H - 38);
-  const xS = i => i / (N - 1) * (W - 16) + 8;
-  ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
-  [0,.25,.5,.75,1].forEach(f => {
-    const y = H - 22 - f * (H - 38);
-    ctx.beginPath(); ctx.moveTo(8, y); ctx.lineTo(W - 8, y); ctx.stroke();
-    ctx.fillStyle = '#8b949e'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText((mn + f*(mx-mn)).toFixed(0) + '°', 7, y + 3);
-  });
-  function dl(pts, col) {
-    const vp = pts.map((p,i) => ({p,i})).filter(x => x.p !== null);
-    if (vp.length < 2) return;
-    ctx.beginPath(); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-    vp.forEach(({p,i},j) => j===0 ? ctx.moveTo(xS(i),yS(p)) : ctx.lineTo(xS(i),yS(p)));
-    ctx.stroke();
-    const last = vp[vp.length-1];
-    ctx.beginPath(); ctx.arc(xS(last.i), yS(last.p), 3, 0, Math.PI*2);
-    ctx.fillStyle = col; ctx.fill();
-  }
-  dl(hist.o, '#58a6ff'); dl(hist.s, '#e3b341'); dl(hist.r, '#56d4c8');
-  const leg = [['#58a6ff','Outdoor'],['#e3b341','Supply S1'],['#56d4c8','Room S1']];
-  let lx = 10;
-  leg.forEach(([c,l]) => {
-    ctx.fillStyle = c; ctx.fillRect(lx, H-12, 10, 7);
-    ctx.fillStyle = '#8b949e'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText(l, lx+13, H-6); lx += ctx.measureText(l).width + 26;
+  // ── Temperatures (only these four) ──
+  TEMPS.forEach(t => {
+    document.getElementById(t.el).innerHTML = pointValue(findP(t.ids, t.re, '°C'), 1, '°C');
   });
 }
 
@@ -699,10 +469,8 @@ function drawChart() {
 ══════════════════════════════════════════ */
 function loadDemo() {
   demoMode = true;
-  document.getElementById('setup-panel').style.display = 'none';
-  document.getElementById('dashboard').style.display   = 'block';
-  setBadge('auth', '⬤ Demo mode');
-  buildTempGrid(); buildCanvas();
+  showDashboard();
+  setBadge('auth', 'Demo');
   tickDemo();
   pollTimer = setInterval(tickDemo, 5000);
 }
@@ -710,55 +478,32 @@ function loadDemo() {
 function tickDemo() {
   _demoT += 0.07;
   const sin = Math.sin, rand = () => Math.random()*.4-.2;
-  const make = (base,amp,phase) => +(base + amp*sin(_demoT*.08+phase) + rand()).toFixed(1);
-  const fakeParams = [
-    {parameterId:40004, parameterName:'BT1 Outdoor temp',        value:make(-5,4,0),    displayValue:make(-5,4,0)+'°C',   parameterUnit:'°C'},
-    {parameterId:40008, parameterName:'BT2 Supply temp S1',      value:make(36,5,1),    displayValue:make(36,5,1)+'°C',   parameterUnit:'°C'},
-    {parameterId:40012, parameterName:'BT3 Return temp S1',      value:make(31,4,1.5),  displayValue:make(31,4,1.5)+'°C', parameterUnit:'°C'},
-    {parameterId:40013, parameterName:'BT7 Hot water top',       value:make(56,2,.3),   displayValue:make(56,2,.3)+'°C',  parameterUnit:'°C'},
-    {parameterId:40014, parameterName:'BT6 Hot water load',      value:make(46,2,.4),   displayValue:make(46,2,.4)+'°C',  parameterUnit:'°C'},
-    {parameterId:40018, parameterName:'BT14 Hot gas temp',       value:make(72,6,2),    displayValue:make(72,6,2)+'°C',   parameterUnit:'°C'},
-    {parameterId:40023, parameterName:'BT18 Compressor temp',    value:make(56,3,1.2),  displayValue:make(56,3,1.2)+'°C', parameterUnit:'°C'},
-    {parameterId:40033, parameterName:'BT50 Room temp S1',       value:make(21.5,.5,.2),displayValue:make(21.5,.5,.2)+'°C',parameterUnit:'°C'},
-    {parameterId:43009, parameterName:'Calc supply temp S1',     value:make(36.5,5,1),  displayValue:make(36.5,5,1)+'°C', parameterUnit:'°C'},
-    {parameterId:43005, parameterName:'Degree minutes',          value:-185,            displayValue:'-185 DM',           parameterUnit:'DM'},
-    {parameterId:43086, parameterName:'Priority',                value:30,              displayValue:'Heating',           parameterUnit:''},
-    {parameterId:43427, parameterName:'Compressor state',        value:60,              displayValue:'Running',           parameterUnit:''},
-    {parameterId:45001, parameterName:'Alarm number',            value:0,               displayValue:'0',                 parameterUnit:''},
-    {parameterId:40079, parameterName:'current (BE1)', value:make(5,1.5,0.2), displayValue:make(5,1.5,0.2)+'A', parameterUnit:'A'},
-    {parameterId:40081, parameterName:'current (BE2)', value:make(4,1.5,0.6), displayValue:make(4,1.5,0.6)+'A', parameterUnit:'A'},
-    {parameterId:40083, parameterName:'current (BE3)', value:make(6,1.5,1.1), displayValue:make(6,1.5,1.1)+'A', parameterUnit:'A'},
-    {parameterId:43084, parameterName:'Int el add power',        value:0,               displayValue:'0.00 kW',           parameterUnit:'kW'},
-    {parameterId:47041, parameterName:'Hot water mode',          value:1,               displayValue:'Normal',            parameterUnit:''},
-    {parameterId:47007, parameterName:'Heat curve S1',           value:9,               displayValue:'9',                 parameterUnit:''},
-    {parameterId:47011, parameterName:'Offset S1',               value:0,               displayValue:'0',                 parameterUnit:''},
-    {parameterId:47015, parameterName:'Min supply S1',           value:20,              displayValue:'20°C',              parameterUnit:'°C'},
-    {parameterId:47019, parameterName:'Max supply S1',           value:55,              displayValue:'55°C',              parameterUnit:'°C'},
-    {parameterId:47206, parameterName:'DM start heating',        value:-30,             displayValue:'-30 DM',            parameterUnit:'DM'},
-    {parameterId:47208, parameterName:'DM start add',            value:-700,            displayValue:'-700 DM',           parameterUnit:'DM'},
+  const mk = (base, amp, ph) => +(base + amp*sin(_demoT*.08+ph) + rand()).toFixed(1);
+  allParams = [
+    {parameterId:40004, parameterName:'outdoor temp.',      parameterUnit:'°C', value:mk(-5,4,0)},
+    {parameterId:40008, parameterName:'supply temp.',       parameterUnit:'°C', value:mk(36,5,1)},
+    {parameterId:40012, parameterName:'return temp.',       parameterUnit:'°C', value:mk(31,4,1.5)},
+    {parameterId:40013, parameterName:'hot water top',      parameterUnit:'°C', value:mk(56,2,.3)},
+    {parameterId:40079, parameterName:'current (BE1)',      parameterUnit:'A',  value:mk(5,1.5,.2)},
+    {parameterId:40081, parameterName:'current (BE2)',      parameterUnit:'A',  value:mk(4,1.5,.6)},
+    {parameterId:40083, parameterName:'current (BE3)',      parameterUnit:'A',  value:mk(6,1.5,1.1)},
+    {parameterId:43427, parameterName:'compressor status',  parameterUnit:'',   value:60, strVal:'Running'},
+    {parameterId:43086, parameterName:'priority',           parameterUnit:'',   value:30, strVal:'Heating'},
+    {parameterId:43084, parameterName:'int el add power',   parameterUnit:'kW', value:0},
+    {parameterId:47041, parameterName:'hot water mode',     parameterUnit:'',   value:1,  strVal:'Normal'},
+    {parameterId:45001, parameterName:'alarm number',       parameterUnit:'',   value:0},
   ];
-  allParams = fakeParams;
-  render(fakeParams);
-  document.getElementById('upd').textContent = 'Demo · ' + new Date().toLocaleTimeString();
+  render(allParams);
+  document.getElementById('upd').textContent = new Date().toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit' });
 }
 
 /* ══════════════════════════════════════════
    UTILITIES
 ══════════════════════════════════════════ */
-function fmt(v, d=1) { if (v===null||v===undefined) return '—'; return Number(v).toFixed(d); }
-
 function setBadge(state, text) {
   const el = document.getElementById('badge');
   el.textContent = text;
   el.className = state === 'ok' ? 'ok' : state === 'err' ? 'err' : state === 'auth' ? 'auth' : '';
-}
-
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    const names = ['overview','all-params'];
-    t.classList.toggle('active', names[i] === name);
-  });
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-'+name));
 }
 </script>
 </body>
